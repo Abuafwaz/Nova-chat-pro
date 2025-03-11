@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaChat Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --accent-color: #7c3aed;
+            --secondary-bg: #1e293b;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .light-theme {
+            --bg-color: #ffffff;
+            --text-color: #1e293b;
+            --secondary-bg: #f1f5f9;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #4f46e5 100%);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .theme-toggle {
+            position: relative;
+            width: 64px;
+            height: 32px;
+            border-radius: 16px;
+            background: var(--secondary-bg);
+            cursor: pointer;
+        }
+
+        .theme-slider {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            top: 4px;
+            left: 4px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .light-theme .theme-slider {
+            transform: translateX(32px);
+        }
+
+        #chatContainer {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            height: calc(100vh - 120px);
+        }
+
+        #chatMessages {
+            height: calc(100% - 80px);
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .chat-bubble {
+            max-width: 75%;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            border-radius: var(--border-radius);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .user-message {
+            background: var(--accent-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background: var(--secondary-bg);
+            margin-right: auto;
+            box-shadow: var(--shadow);
+        }
+
+        #inputContainer {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--secondary-bg);
+            border-radius: var(--border-radius);
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border-radius: 50px;
+            border: 2px solid transparent;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        #sendButton {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-circle"></div>
+            <span>NovaChat Pro</span>
+        </div>
+        <div class="theme-toggle" id="themeToggle">
+            <div class="theme-slider"></div>
+        </div>
+    </header>
+
+    <div id="chatContainer">
+        <div id="chatMessages"></div>
+        <div id="inputContainer">
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <button id="sendButton">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyDCwhFd-jT2v_jKbEo_RS9e3GugpEE2eD8';
+        
+        // Theme Toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+        });
+
+        // Chat Functionality
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            try {
+                // Get AI response
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: message }]
+                            }]
+                        })
+                    }
+                );
+
+                const data = await response.json();
+                const botResponse = data.candidates[0].content.parts[0].text;
+                addMessage(botResponse, 'bot');
+                
+            } catch (error) {
+                addMessage('Error: Please try again', 'bot');
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-bubble ${sender}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Event Listeners
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
